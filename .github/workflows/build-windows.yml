@@ -21,14 +21,14 @@ jobs:
       - name: Compile dependencies
         run: |
           cd ..
-          git clone git@github.com:witwall/mman-win32
+          git clone https://github.com/witwall/mman-win32
           cd mman-win32
           ./configure --cross-prefix=x86_64-w64-mingw32-
           make
           mkdir sys
           ln *.h ./sys/
           cd ..
-          git clone github.com:openssl/openssl
+          git clone https://github.com/openssl/openssl
           cd openssl
           git checkout OpenSSL_1_0_2s
           ./Configure --cross-compile-prefix=x86_64-w64-mingw32- mingw64
