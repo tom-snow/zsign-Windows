@@ -28,27 +28,15 @@ bool ZAppBundle::FindAppFolder(const string &strFolder, string &strAppFolder)
 		{
 			if (0 != strcmp(ptr->d_name, ".") && 0 != strcmp(ptr->d_name, "..") && 0 != strcmp(ptr->d_name, "__MACOSX"))
 			{
-				bool isdir = false;
-				if (DT_DIR == ptr->d_type)
-				{
-					isdir = true;
-				}
-				else if (DT_UNKNOWN == ptr->d_type)
-				{
-					// Entry type can be unknown depending on the underlying file system
-					ZLog::DebugV(">>> Unknown directory entry type for %s, falling back to POSIX-compatible check\n", strFolder.c_str());
-					struct stat statbuf;
-					stat(strFolder.c_str(), &statbuf);
-					if (S_ISDIR(statbuf.st_mode))
-					{
-						isdir = true;
-					}
-				}
+                string strSubFolder = strFolder;
+                strSubFolder += "/";
+                strSubFolder += ptr->d_name;
+
+                struct stat statbuf{};
+                stat(strSubFolder.c_str(), &statbuf);
+                bool isdir = S_ISDIR(statbuf.st_mode);
 				if (isdir)
 				{
-					string strSubFolder = strFolder;
-					strSubFolder += "/";
-					strSubFolder += ptr->d_name;
 					if (FindAppFolder(strSubFolder, strAppFolder))
 					{
 						return true;
@@ -111,7 +99,9 @@ bool ZAppBundle::GetObjectsToSign(const string &strFolder, JValue &jvInfo)
 			if (0 != strcmp(ptr->d_name, ".") && 0 != strcmp(ptr->d_name, ".."))
 			{
 				string strNode = strFolder + "/" + ptr->d_name;
-				if (DT_DIR == ptr->d_type)
+                struct stat statbuf{};
+                stat(strNode.c_str(), &statbuf);
+				if (S_ISDIR(statbuf.st_mode))
 				{
 					if (IsPathSuffix(strNode, ".app") || IsPathSuffix(strNode, ".appex") || IsPathSuffix(strNode, ".framework") || IsPathSuffix(strNode, ".xctest"))
 					{
@@ -130,7 +120,7 @@ bool ZAppBundle::GetObjectsToSign(const string &strFolder, JValue &jvInfo)
 						GetObjectsToSign(strNode, jvInfo);
 					}
 				}
-				else if (DT_REG == ptr->d_type)
+				else if (S_ISREG(statbuf.st_mode))
 				{
 					if (IsPathSuffix(strNode, ".dylib"))
 					{
@@ -158,11 +148,13 @@ void ZAppBundle::GetFolderFiles(const string &strFolder, const string &strBaseFo
 				string strNode = strFolder;
 				strNode += "/";
 				strNode += ptr->d_name;
-				if (DT_DIR == ptr->d_type)
+                struct stat statbuf{};
+                stat(strNode.c_str(), &statbuf);
+				if (S_ISDIR(statbuf.st_mode))
 				{
 					GetFolderFiles(strNode, strBaseFolder, setFiles);
 				}
-				else if (DT_REG == ptr->d_type)
+				else if (S_ISREG(statbuf.st_mode))
 				{
 					setFiles.insert(strNode.substr(strBaseFolder.size() + 1));
 				}
@@ -453,11 +445,13 @@ void ZAppBundle::GetPlugIns(const string &strFolder, vector<string> &arrPlugIns)
 		{
 			if (0 != strcmp(ptr->d_name, ".") && 0 != strcmp(ptr->d_name, ".."))
 			{
-				if (DT_DIR == ptr->d_type)
+                string strSubFolder = strFolder;
+                strSubFolder += "/";
+                strSubFolder += ptr->d_name;
+                struct stat statbuf{};
+                stat(strSubFolder.c_str(), &statbuf);
+				if (S_ISDIR(statbuf.st_mode))
 				{
-					string strSubFolder = strFolder;
-					strSubFolder += "/";
-					strSubFolder += ptr->d_name;
 					if (IsPathSuffix(strSubFolder, ".app") || IsPathSuffix(strSubFolder, ".appex"))
 					{
 						arrPlugIns.push_back(strSubFolder);

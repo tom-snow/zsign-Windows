@@ -294,20 +294,9 @@ string GetCanonicalizePath(const char *szPath)
 			char path[PATH_MAX] = {0};
 
 #if defined(WINDOWS)
-
-			if (NULL != _fullpath((char *)"./", path, PATH_BUFFER_LENGTH))
-			{
-				strPath = path;
-				strPath += "/";
-				strPath += szPath;
-			}
+			strPath = _fullpath(path, szPath, PATH_BUFFER_LENGTH);
 #else
-			if (NULL != realpath("./", path))
-			{
-				strPath = path;
-				strPath += "/";
-				strPath += szPath;
-			}
+            realpath("./", path);
 #endif
 		}
 		StringReplace(strPath, "/./", "/");
@@ -442,10 +431,10 @@ bool SystemExec(const char *szFormatCmd, ...)
 			}
 		}
 		else
+#endif
 		{
 			return true;
 		}
-#endif
 	}
 	return false;
 }

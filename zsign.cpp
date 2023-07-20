@@ -6,6 +6,7 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <getopt.h>
+#include <filesystem>
 
 const struct option options[] = {
 	{"debug", no_argument, NULL, 'd'},
@@ -201,10 +202,11 @@ int main(int argc, char *argv[])
 	{ //ipa file
 		bForce = true;
 		bEnableCache = false;
-		StringFormat(strFolder, "/tmp/zsign_folder_%llu", timer.Reset());
+		StringFormat(strFolder, "zsign_folder_%llu", timer.Reset());
+        strFolder = std::filesystem::temp_directory_path().append(strFolder).string();
 		ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(), GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
 		RemoveFolder(strFolder.c_str());
-		if (!SystemExec("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
+		if (!SystemExec("unzip -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
 		{
 			RemoveFolder(strFolder.c_str());
 			ZLog::ErrorV(">>> Unzip Failed!\n");
@@ -220,7 +222,8 @@ int main(int argc, char *argv[])
 
 	if (bInstall && strOutputFile.empty())
 	{
-		StringFormat(strOutputFile, "/tmp/zsign_temp_%llu.ipa", GetMicroSecond());
+        auto tempPath = std::filesystem::temp_directory_path();
+		StringFormat(strOutputFile, tempPath.append("zsign_temp_%llu.ipa").string().c_str(), GetMicroSecond());
 	}
 
 	if (!strOutputFile.empty())
@@ -242,7 +245,7 @@ int main(int argc, char *argv[])
 			{
 				uZipLevel = uZipLevel > 9 ? 9 : uZipLevel;
 				RemoveFile(strOutputFile.c_str());
-				SystemExec("zip -q -%u -r '%s' Payload", uZipLevel, strOutputFile.c_str());
+				SystemExec("zip -q -%u -r %s Payload", uZipLevel, strOutputFile.c_str());
 				chdir(szOldFolder);
 				if (!IsFileExists(strOutputFile.c_str()))
 				{
@@ -254,17 +257,20 @@ int main(int argc, char *argv[])
 		timer.PrintResult(true, ">>> Archive OK! (%s)", GetFileSizeString(strOutputFile.c_str()).c_str());
 	}
 
+
+    auto tempPath = std::filesystem::temp_directory_path();
+
 	if (bRet && bInstall)
 	{
 		SystemExec("ideviceinstaller -i '%s'", strOutputFile.c_str());
 	}
 
-	if (0 == strOutputFile.find("/tmp/zsign_tmp_"))
+	if (0 == strOutputFile.find((tempPath / "zsign_tmp_").string()))
 	{
 		RemoveFile(strOutputFile.c_str());
 	}
 
-	if (0 == strFolder.find("/tmp/zsign_folder_"))
+	if (0 == strFolder.find((tempPath / "zsign_folder_").string()))
 	{
 		RemoveFolder(strFolder.c_str());
 	}
