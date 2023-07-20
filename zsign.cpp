@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
         strFolder = std::filesystem::temp_directory_path().append(strFolder).string();
 		ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(), GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
 		RemoveFolder(strFolder.c_str());
-		if (!SystemExec("unzip -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
+		if (!SystemExec("unzip -qq -d '%s' '%s'", strFolder.c_str(), strPath.c_str()))
 		{
 			RemoveFolder(strFolder.c_str());
 			ZLog::ErrorV(">>> Unzip Failed!\n");
