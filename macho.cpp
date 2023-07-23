@@ -99,7 +99,8 @@ bool ZMachO::OpenFile(const char *szPath)
 		}
 		else
 		{
-			ZLog::ErrorV(">>> Invalid Macho File (2)!\n");
+			ZLog::ErrorV(">>> Invalid Macho File (2)! %x\n", magic);
+			ZLog::ErrorV(">>> Base: %x\n", m_pBase);
 			return false;
 		}
 	}
