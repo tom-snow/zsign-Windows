@@ -2,6 +2,7 @@
 #include "common/json.h"
 #include "common/mach-o.h"
 #include "openssl.h"
+#include <filesystem>
 
 static void _DERLength(string &strBlob, uint64_t uLength)
 {
@@ -134,7 +135,8 @@ bool SlotParseRequirements(uint8_t *pSlotBase, CS_BlobIndex *pbi)
 	if (IsFileExists("/usr/bin/csreq"))
 	{
 		string strTempFile;
-		StringFormat(strTempFile, "/tmp/Requirements_%llu.blob", GetMicroSecond());
+        auto tempPath = std::filesystem::temp_directory_path();
+		StringFormat(strTempFile, tempPath.append("Requirements_%llu.blob").string().c_str(), GetMicroSecond());
 		WriteFile(strTempFile.c_str(), (const char *)pSlotBase, uSlotLength);
 
 		string strCommand;

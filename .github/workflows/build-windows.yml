@@ -1,0 +1,52 @@
+name: Windows build
+
+on: push
+
+env:
+  BUILD_TYPE: Release
+  VERBOSE: 1
+
+jobs:
+  build-zsign:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64 git
+
+      - name: Compile dependencies
+        run: |
+          cd ..
+          git clone https://github.com/witwall/mman-win32
+          cd mman-win32
+          ./configure --cross-prefix=x86_64-w64-mingw32-
+          make
+          mkdir sys
+          ln *.h ./sys/
+          cd ..
+          git clone https://github.com/openssl/openssl
+          cd openssl
+          git checkout OpenSSL_1_0_2s
+          ./Configure --cross-compile-prefix=x86_64-w64-mingw32- mingw64
+          make
+
+      - name: Compile zsign
+        run: |
+          x86_64-w64-mingw32-g++  \
+          *.cpp common/*.cpp -o zsign.exe  \
+          -lcrypto -I../mman-win32  \
+          -std=c++17  -I../openssl/include/  \
+          -DWINDOWS -L../openssl  \
+          -L../mman-win32  \
+          -lmman -lgdi32  \
+          -m64 -static -static-libgcc -lws2_32
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: zsign
+          path: |
+            ${{github.workspace}}/zsign.exe
