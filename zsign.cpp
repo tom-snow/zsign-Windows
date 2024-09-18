@@ -196,6 +196,18 @@ int main(int argc, char *argv[]) {
   if (bZipFile) { // ipa file
     bForce = true;
     bEnableCache = false;
+#if defined(WINDOWS)
+    StringFormat(strFolder, ".\\tmp\\zsign_folder_%llu", timer.Reset());
+    ZLog::PrintV(">>> Expand-Archive:\t%s (%s) -> %s ... \n", strPath.c_str(),
+                 GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
+    RemoveFolder(strFolder.c_str());
+    if (!SystemExec("pwsh.exe -command \"Expand-Archive -DestinationPath '%s' -LiteralPath '%s'\"", strFolder.c_str(),
+                    strPath.c_str())) {
+      RemoveFolder(strFolder.c_str());
+      ZLog::ErrorV(">>> Expand-Archive Failed!\n");
+      return -1;
+    }
+#else
     StringFormat(strFolder, "/tmp/zsign_folder_%llu", timer.Reset());
     ZLog::PrintV(">>> Unzip:\t%s (%s) -> %s ... \n", strPath.c_str(),
                  GetFileSizeString(strPath.c_str()).c_str(), strFolder.c_str());
@@ -206,6 +218,7 @@ int main(int argc, char *argv[]) {
       ZLog::ErrorV(">>> Unzip Failed!\n");
       return -1;
     }
+#endif
     timer.PrintResult(true, ">>> Unzip OK!");
   }
 
@@ -217,7 +230,11 @@ int main(int argc, char *argv[]) {
   timer.PrintResult(bRet, ">>> Signed %s!", bRet ? "OK" : "Failed");
 
   if (bInstall && strOutputFile.empty()) {
+#if defined(WINDOWS)
+    StringFormat(strOutputFile, ".\\tmp\\zsign_temp_%llu.ipa", GetMicroSecond());
+#else
     StringFormat(strOutputFile, "/tmp/zsign_temp_%llu.ipa", GetMicroSecond());
+#endif
   }
 
   if (!strOutputFile.empty()) {
@@ -235,8 +252,12 @@ int main(int argc, char *argv[]) {
       if (0 == chdir(strBaseFolder.c_str())) {
         uZipLevel = uZipLevel > 9 ? 9 : uZipLevel;
         RemoveFile(strOutputFile.c_str());
+#if defined(WINDOWS)
+        SystemExec("pwsh.exe -command \"Compress-Archive -Path 'Payload' -DestinationPath '%s'\"", strOutputFile.c_str());
+#else
         SystemExec("zip -q -%u -r '%s' Payload", uZipLevel,
                    strOutputFile.c_str());
+#endif
         chdir(szOldFolder);
         if (!IsFileExists(strOutputFile.c_str())) {
           ZLog::Error(">>> Archive Failed!\n");

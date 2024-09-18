@@ -48,7 +48,7 @@ apt-get install mingw-w64
 2. Build mman-win32
 
 ```bash
-git clone git@github.com:witwall/mman-win32
+git clone github.com/witwall/mman-win32
 cd mman-win32
 ./configure --cross-prefix=x86_64-w64-mingw32-
 make
@@ -56,7 +56,7 @@ make
 
 3.  Build openssl
 ```
-git clone github.com:openssl/openssl
+git clone github.com/openssl/openssl
 cd openssl
 git checkout OpenSSL_1_0_2s
 ./Configure --cross-compile-prefix=x86_64-w64-mingw32- mingw64
@@ -64,10 +64,19 @@ make
 
 ```
 
-4. Build zsign
+4. Download dirent.h for windows
+```
+git clone https://github.com/tronkko/dirent
+# or you can only download that file
+mkdir -p dirent/include
+curl -L -o dirent/include/dirent.h https://github.com/tronkko/dirent/raw/master/include/dirent.h
+```
+
+5. Build zsign
 ```bash
 x86_64-w64-mingw32-g++  \
 *.cpp common/*.cpp -o zsign.exe  \
+-I../dirent/include/ \
 -lcrypto -I../mman-win32  \
 -std=c++17  -I../openssl/include/  \
 -DWINDOWS -L../openssl  \
@@ -75,6 +84,8 @@ x86_64-w64-mingw32-g++  \
 -lmman -lgdi32  \
 -m64 -static -static-libgcc -lws2_32
 ```
+
+PS(Important!!!): On users device, you should install [powershell7 from Microsoft Store](https://apps.microsoft.com/detail/9mz1snwt0n5d) first! Otherwize zsign can't unzip/zip ipa file!
 
 ## Optional Compile:
 
